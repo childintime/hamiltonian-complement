@@ -5,6 +5,9 @@
 /* test jestli graf je hamiltonovsky */
 bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 
+/* hamilton test */
+bool hamilton_test(int n, int graph[][n]);
+
 /* tisk cesty */
 void print_path(int n, int path[n]);
 
@@ -47,13 +50,25 @@ int main(int argc, char *argv[])
     	}
 	}
 
-	
-	     
-
 
 	// ------------- mame matici a jdem overit jestli je hamiltonovska
 
+    
+    if(hamilton_test(n, graph)) {
+        printf("Graf je hamiltonovsky s vyse uvedenou cestou.\n");
+    }
+    else {
+        printf("Graf neni hamiltonovsky.\n");
+    }
+
+    return 0;
+}
+
+bool hamilton_test(int n, int graph[][n]) {
+    // cesta
     int path[n];
+    
+    // pole s pouzitymi vrcholy (0 = nepouzity, 1 = pouzity)
     int used[n];
     int position = 0;
     for (int i = 0; i < n; i++) {
@@ -66,16 +81,13 @@ int main(int argc, char *argv[])
     path[0] = 0;
     used[0] = 1;
 
-    
-
     if(hamilton(n, graph, path, position, used)) {
-        printf("Graf je hamiltonovsky s vyse uvedenou cestou.\n");
+        return true;
     }
     else {
-        printf("Graf neni hamiltonovsky.\n");
+        return false;
     }
 
-    return 0;
 }
 
 
