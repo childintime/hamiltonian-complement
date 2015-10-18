@@ -13,6 +13,11 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 /* vypise kruznici */
 void print_hamilton_cycle(int n, int path[n]);
 
+// hamiltonovsky doplnek je v hc[][n]
+void hc(int n, int graph[][n], int complement[][n]);
+
+void print_graph(int n, int graph[][n]);
+
 int main(int argc, char *argv[])
 {
 	if (argc < 2) {
@@ -61,10 +66,60 @@ int main(int argc, char *argv[])
     }
     else {
         printf("Graf neni hamiltonovsky.\n");
+        
+        // tohle pole bude to kam budu davat pridavat hrany, na zacatku tedy prazdny
+        int complement[n][n];
+        
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                complement[i][j] = 0;
+            }
+        }
+
+        
+        //hc(n, graph, complement);
+
+
     }
 
     return 0;
 }
+
+void hc(int n, int graph[][n], int complement[][n]) {
+    
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (j>i) {
+                if (graph[i][j] == 0 && complement[i][j] == 0 ) {
+                    graph[i][j] = 1;
+                    graph[j][i] = 1;
+                    complement[i][j] = 1;
+                    complement[j][i] = 1;
+                    //printf("mam reseni\n");
+                    
+                    if(hamilton_test(n, graph)) {
+                        print_graph(n, graph);
+                        printf("mam reseni\n");
+                    //    print_graph(n, graph);
+                        //return;
+                    }
+                    else {
+                        printf("zatim ne\n");
+                        hc(n, graph, complement);
+                    }
+                    graph[i][j] = 0;
+                    graph[j][i] = 0;
+                    complement[i][j] = 0;
+                    complement[j][i] = 0;
+                    
+                }
+            }
+        }
+    }
+
+}
+
+
 
 bool hamilton_test(int n, int graph[][n]) {
     // cesta
@@ -96,17 +151,7 @@ bool hamilton_test(int n, int graph[][n]) {
 /* test jestli graf je hamiltonovsky */
 bool hamilton(int n, int graph[][n], int path[n], int position, int used[n])
 {
-    // vytisteni matice grafu pro overeni
-    /*
-    for (int i = 0; i < n; i++) {
-        for (int v = 0; v < n; v++) {
-            printf("%4d ", graph[i][v]);
-        }
-        printf("\n");
-    }
-    */
     
-
     // pokud uz je cesta dlouha jako je pocet vrcholu a existuje prechod z posledniho bodu do prvniho tak konec, mame kruznici -- jinak jsme nasli cesty delky n, ale neni to kruznice.
     if (position == n) {
         
@@ -127,6 +172,11 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n])
             if(hamilton(n, graph, path, position+1, used)) {
                 return true;
             }
+            // backtracking
+            else {
+                path[position] = -1;
+                used[i] = 0;
+            }
         }
     }
     
@@ -140,4 +190,14 @@ void print_hamilton_cycle(int n, int path[n]) {
     }
 
     printf("%d \n", path[0]);
+}
+
+// vytisteni matice grafu
+void print_graph(int n, int graph[][n]) {
+    for (int i = 0; i < n; i++) {
+        for (int v = 0; v < n; v++) {
+            printf("%4d ", graph[i][v]);
+        }
+        printf("\n");
+    }
 }
