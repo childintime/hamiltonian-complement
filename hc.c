@@ -2,14 +2,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-/* test jestli graf je hamiltonovsky */
-bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 
-/* hamilton test */
+/* test zda je zadany graf hamiltonovsky*/
 bool hamilton_test(int n, int graph[][n]);
 
-/* tisk cesty */
-void print_path(int n, int path[n]);
+/* rekurzivni funkce pro test */
+bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
+
+
+/* vypise kruznici */
+void print_hamilton_cycle(int n, int path[n]);
 
 int main(int argc, char *argv[])
 {
@@ -55,7 +57,7 @@ int main(int argc, char *argv[])
 
     
     if(hamilton_test(n, graph)) {
-        printf("Graf je hamiltonovsky s vyse uvedenou cestou.\n");
+        printf("Graf je hamiltonovsky s vyse uvedenou kruznici.\n");
     }
     else {
         printf("Graf neni hamiltonovsky.\n");
@@ -109,7 +111,7 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n])
     if (position == n) {
         
         if (graph[path[0]][path[position-1]] == 1) {
-            print_path(n, path);    
+            print_hamilton_cycle(n, path);    
             return true;
         }
         else {
@@ -131,10 +133,11 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n])
     return false; 
 }
 
-// tisk cesty
-void print_path(int n, int path[n]) {
+// tisk hamiltonovsky kruznice
+void print_hamilton_cycle(int n, int path[n]) {
     for (int i = 0; i < n; i++) {
             printf("%d ", path[i]);
     }
-    printf("\n");
+
+    printf("%d \n", path[0]);
 }
