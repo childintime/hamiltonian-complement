@@ -14,9 +14,12 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 void print_hamilton_cycle(int n, int path[n]);
 
 // hamiltonovsky doplnek je v hc[][n]
-void hc(int n, int graph[][n], int complement[][n]);
+void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j);
 
 void print_graph(int n, int graph[][n]);
+
+
+//int solution_edges 
 
 int main(int argc, char *argv[])
 {
@@ -77,7 +80,7 @@ int main(int argc, char *argv[])
         }
 
         
-        //hc(n, graph, complement);
+        hc(n, graph, complement, 0, 1);
 
 
     }
@@ -85,37 +88,36 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void hc(int n, int graph[][n], int complement[][n]) {
+void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j) {
     
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (j>i) {
+
+    
+    for (int i = offset_i; i < n; i++) {
+        for (int j = offset_j; j < n; j++) {
+            //printf("i:%d j:%d\n", i, j);
                 if (graph[i][j] == 0 && complement[i][j] == 0 ) {
                     graph[i][j] = 1;
                     graph[j][i] = 1;
                     complement[i][j] = 1;
                     complement[j][i] = 1;
-                    //printf("mam reseni\n");
-                    
+
                     if(hamilton_test(n, graph)) {
-                        print_graph(n, graph);
                         printf("mam reseni\n");
-                    //    print_graph(n, graph);
-                        //return;
+                        print_graph(n, complement);
                     }
-                    else {
-                        printf("zatim ne\n");
-                        hc(n, graph, complement);
-                    }
+
+                    hc(n, graph, complement, i, j+1);
+
                     graph[i][j] = 0;
                     graph[j][i] = 0;
                     complement[i][j] = 0;
                     complement[j][i] = 0;
-                    
                 }
-            }
+            
         }
+        offset_j = i+2;
     }
+    //printf("jsem na konci\n");
 
 }
 
