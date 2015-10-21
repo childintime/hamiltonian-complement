@@ -14,12 +14,24 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 void print_hamilton_cycle(int n, int path[n]);
 
 // hamiltonovsky doplnek je v hc[][n]
-void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j);
+void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j, int edge_count);
 
 void print_graph(int n, int graph[][n]);
 
 
-//int solution_edges 
+
+// struktura s resenim
+struct Solution {
+    int n;
+    int edges;
+    int** graph;
+};
+
+int best_solution;
+struct Solution solution;
+
+void print_solution(struct Solution);
+
 
 int main(int argc, char *argv[])
 {
@@ -42,34 +54,54 @@ int main(int argc, char *argv[])
     int n = 0;
     n = atoi(buffer);
 
-    printf("Pocet vrcholu: %d\n", n);
+    //printf("Pocet vrcholu: %d\n", n);
 
     int graph[n][n];
+
+    
+    
 
     // budu cist n radek
     for (int i = 0; i < n; i++) {
     	
     	fgets(buffer, sizeof(buffer), graphFile);
-		char *p = buffer;
+//		char *p = buffer;
 
 		// na kazdy bude n cisel
     	for (int v = 0; v < n; v++)
     	{
     		// postupne nacte radek do matice grafu, strtol si posouva pointer samo!
-    		graph[i][v] = strtol(p, &p, 10);
+
+            graph[i][v] = buffer[v] - '0';
+
+
     	}
 	}
+    // struktura pro reseni
+    //best_solution = n;
+    //struct Solution solution;
+    solution.n = n;
+    solution.edges = n;
+    solution.graph = malloc(n*sizeof(int*));
+    for (int i = 0; i < n; i++) {
+            solution.graph[i] = malloc(n*sizeof(int));
+    }
 
 
 	// ------------- mame matici a jdem overit jestli je hamiltonovska
 
     
     if(hamilton_test(n, graph)) {
-        printf("Graf je hamiltonovsky s vyse uvedenou kruznici.\n");
+        printf("Graf je hamiltonovsky.\n");
     }
     else {
-        printf("Graf neni hamiltonovsky.\n");
+        //printf("Graf neni hamiltonovsky.\n");
         
+
+
+       
+        //print_graph(n, solution.complement);
+
         // tohle pole bude to kam budu davat pridavat hrany, na zacatku tedy prazdny
         int complement[n][n];
         
@@ -80,15 +112,17 @@ int main(int argc, char *argv[])
         }
 
         
-        hc(n, graph, complement, 0, 1);
-
+        hc(n, graph, complement, 0, 1, 0);
+        print_solution(solution);
+        
 
     }
+
 
     return 0;
 }
 
-void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j) {
+void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j, int edge_count) {
     
 
     
@@ -102,11 +136,24 @@ void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j) 
                     complement[j][i] = 1;
 
                     if(hamilton_test(n, graph)) {
-                        printf("mam reseni\n");
-                        print_graph(n, complement);
+                        
+                        if (edge_count+1 < solution.edges) {
+                            solution.edges = edge_count+1;
+                            for (int n1 = 0; n1 < n; n1++) {
+                                for (int n2 = 0; n2 < n; n2++) {
+                                    // solution.graph[n1][n2] = complement[n1][n2];
+                                    solution.graph[n1][n2] = graph[n1][n2];
+                                }
+                            }
+                            //printf("mam NEJLEPSI reseni, pocet hran:%d \n", edge_count+1);
+                        }
+                        else {
+                            //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", edge_count+1);    
+                        }
+                        //print_graph(n, complement);
                     }
 
-                    hc(n, graph, complement, i, j+1);
+                    hc(n, graph, complement, i, j+1, edge_count+1);
 
                     graph[i][j] = 0;
                     graph[j][i] = 0;
@@ -117,8 +164,6 @@ void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j) 
         }
         offset_j = i+2;
     }
-    //printf("jsem na konci\n");
-
 }
 
 
@@ -158,7 +203,7 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n])
     if (position == n) {
         
         if (graph[path[0]][path[position-1]] == 1) {
-            print_hamilton_cycle(n, path);    
+            //print_hamilton_cycle(n, path);    
             return true;
         }
         else {
@@ -198,7 +243,17 @@ void print_hamilton_cycle(int n, int path[n]) {
 void print_graph(int n, int graph[][n]) {
     for (int i = 0; i < n; i++) {
         for (int v = 0; v < n; v++) {
-            printf("%4d ", graph[i][v]);
+            printf("%d", graph[i][v]);
+        }
+        printf("\n");
+    }
+}
+
+void print_solution(struct Solution solution) {
+    printf("%d\n", solution.edges);
+    for (int i = 0; i < solution.n; i++) {
+        for (int v = 0; v < solution.n; v++) {
+            printf("%d", solution.graph[i][v]);
         }
         printf("\n");
     }
