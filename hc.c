@@ -109,36 +109,41 @@ int main(int argc, char *argv[])
 
 void hc(int n, int graph[][n], int offset_i, int offset_j, int edge_count) {
 
-    if(hamilton_test(n, graph)) {
-
-        if (edge_count < solution.edges) {
-            solution.edges = edge_count;
-            for (int n1 = 0; n1 < n; n1++) {
-                for (int n2 = 0; n2 < n; n2++) {
-                    solution.graph[n1][n2] = graph[n1][n2];
+    // ma smysl hledat reseni jenom pokud muzeme najit lepsi reseni, nez uz mame ... tzn pokud uz jsme do grafu pridali vic hran nez ma zatim nalezene nejlepsi reseni, nema smysl ve vetvi pokracovat
+    if (edge_count < solution.edges) {
+        // test jestli uz graf je hamiltonovsky, pokud ano a pouzilo se mene hran nez ma dosavadni nejlepsi reseni tak prepsat reseni.
+        if(hamilton_test(n, graph)) {
+            if (edge_count < solution.edges) {
+                solution.edges = edge_count;
+                for (int n1 = 0; n1 < n; n1++) {
+                    for (int n2 = 0; n2 < n; n2++) {
+                        solution.graph[n1][n2] = graph[n1][n2];
+                    }
                 }
-            }
                             //printf("mam NEJLEPSI reseni, pocet hran:%d \n", edge_count+1);
-        }
-        else {
+            }
+            else {
                             //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", edge_count+1);    
+            }
         }
-    }
-    
-    for (int i = offset_i; i < n; i++) {
-        for (int j = offset_j; j < n; j++) {
+
+        // az narazim na nespojenou dvojici uzlu, tak pridam hranu a rekurze ... + pokracovani bez pridani hrany    
+        for (int i = offset_i; i < n; i++) {
+            for (int j = offset_j; j < n; j++) {
             //printf("i:%d j:%d\n", i, j);
                 if (graph[i][j] == 0) {
                     graph[i][j] = 1;
                     graph[j][i] = 1;
                     
+                    // rekurze
                     hc(n, graph, i, j+1, edge_count+1);
 
                     graph[i][j] = 0;
                     graph[j][i] = 0;
                 }
+            }
+            offset_j = i+2;
         }
-        offset_j = i+2;
     }
 }
 

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stack>
 
-// graf
+// struktura grafu, vcetne pozice a poctu pridanych hran ... vlastne stav
 typedef struct Graph {
     // pocet vrcholu
     int n;
@@ -31,9 +31,9 @@ bool hamilton(Graph graph, int path[], int position, int used[]);
 //void print_hamilton_cycle(int n, int path[n]);
 
 // hlavni funkce, ktera naplni strukturu solution vyslednym grafem
-void hc(Graph graph);
 void hc_stack();
 
+// tisk grafu
 void print_graph(Graph graph);
 
 
@@ -45,8 +45,6 @@ struct Solution {
     int** graph;
 };
 
-
-int best_solution;
 struct Solution solution;
 
 void print_solution(struct Solution);
@@ -74,10 +72,7 @@ int main(int argc, char *argv[])
     int n = 0;
     n = atoi(buffer);
 
-    //printf("Pocet vrcholu: %d\n", n);
-
-    //int graph[n][n];
-
+    // graf ze zadani
     Graph graph;
     graph.n = n;
     graph.offset_i = 0;
@@ -92,21 +87,16 @@ int main(int argc, char *argv[])
         fgets(buffer, sizeof(buffer), graphFile);
 
         graph.graph[i] = (int*) malloc(n*sizeof(int));
-//      char *p = buffer;
 
         // na kazdy bude n cisel
         for (int v = 0; v < n; v++)
         {
-            // postupne nacte radek do matice grafu, strtol si posouva pointer samo!
-
+            // postupne nacte radek do matice grafu, po znaku, - '0' to srovna.
             graph.graph[i][v] = buffer[v] - '0';
-
-
         }
     }
+    
     // struktura pro reseni
-    //best_solution = n;
-    //struct Solution solution;
     solution.n = n;
     solution.edges = n;
     solution.graph = (int**) malloc(n*sizeof(int*));
@@ -123,35 +113,26 @@ int main(int argc, char *argv[])
     if(hamilton_test(graph)) {
         printf("Graf je hamiltonovsky.\n");
     }
+    // neni
     else {
-        
-
+        // na vrchol zasobniku dam zadani
         graph_stack.push(graph);
 
-        //while()
-
-      //  printf("Graf neni hamiltonovsky.\n");
+        //  printf("Graf neni hamiltonovsky.\n");
         hc_stack();
-        //hc(graph);
         print_solution(solution);
-        
-
     }
     
-
-
     return 0;
 }
 
 void hc_stack() {
+    // dokud je neco v zasobniku tak hledani bezi
     while(graph_stack.size() > 0) {
-        //printf("size: %lu\n", graph_stack.size());
         Graph graph = graph_stack.top();
-        //printf("pop\n");
+        // smazani vrcholu
         graph_stack.pop();
-       //printf("%d, solution: %d\n", graph.edge_count, solution.edges);
-        //graph_stack.pop();
-
+       
         // test jestli uz graf je hamiltonovsky, pokud ano a pouzilo se mene hran nez ma dosavadni nejlepsi reseni tak prepsat reseni.
         if(hamilton_test(graph)) {
             if (graph.edge_count < solution.edges) {
@@ -167,20 +148,17 @@ void hc_stack() {
                 //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", graph.edge_count);    
             }
         }
-            // ma cenu hledat dal jenom pokud neni hamiltonovsky
+        // ma cenu hledat dal jenom pokud neni hamiltonovsky
         else {
             // ma smysl hledat reseni jenom pokud muzeme najit lepsi reseni, nez uz mame ... tzn pokud uz jsme do grafu pridali vic hran nez ma zatim nalezene nejlepsi reseni, nema smysl ve vetvi pokracovat
             // -1 je tam protoze to k reseni vede jenom pokud pridam hranu
             if (graph.edge_count < (solution.edges-1)) {
-                
-
-
                 // az narazim na nespojenou dvojici uzlu, tak pridam hranu a rekurze ... + pokracovani bez pridani hrany    
                 for (int i = graph.offset_i; i < graph.n; i++) {
                     for (int j = graph.offset_j; j < graph.n; j++) {
             
                         if (graph.graph[i][j] == 0) {
-
+                            // kopie grafu, pri pridani na zasobnik
                             Graph new_graph;
 
                             new_graph.n = graph.n;
@@ -190,7 +168,6 @@ void hc_stack() {
 
                             new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
 
-                            
                             for (int i = 0; i < graph.n; i++) {
                                 new_graph.graph[i] = (int*) malloc(graph.n*sizeof(int));
                                 for (int v = 0; v < graph.n; v++) {
@@ -198,6 +175,7 @@ void hc_stack() {
                                 }
                             }
 
+                            // pridani hrany
                             new_graph.graph[i][j] = 1;
                             new_graph.graph[j][i] = 1;
                     
@@ -217,93 +195,10 @@ void hc_stack() {
             free(graph.graph[i]);
         }
         free(graph.graph);
-
-        
-    }
-    
-}
-
-void hc(Graph graph) {
-    
-    // ma smysl hledat reseni jenom pokud muzeme najit lepsi reseni, nez uz mame ... tzn pokud uz jsme do grafu pridali vic hran nez ma zatim nalezene nejlepsi reseni, nema smysl ve vetvi pokracovat
-    if (graph.edge_count < solution.edges) {
-        // test jestli uz graf je hamiltonovsky, pokud ano a pouzilo se mene hran nez ma dosavadni nejlepsi reseni tak prepsat reseni.
-        if(hamilton_test(graph)) {
-            if (graph.edge_count < solution.edges) {
-                solution.edges = graph.edge_count;
-                for (int n1 = 0; n1 < graph.n; n1++) {
-                    for (int n2 = 0; n2 < graph.n; n2++) {
-                        solution.graph[n1][n2] = graph.graph[n1][n2];
-                    }
-                }
-                            //printf("mam NEJLEPSI reseni, pocet hran:%d \n", edge_count+1);
-            }
-            else {
-                            //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", edge_count+1);    
-            }
-        }
-
-        // az narazim na nespojenou dvojici uzlu, tak pridam hranu a rekurze ... + pokracovani bez pridani hrany    
-        for (int i = graph.offset_i; i < graph.n; i++) {
-            for (int j = graph.offset_j; j < graph.n; j++) {
-            //printf("i:%d j:%d\n", i, j);
-                if (graph.graph[i][j] == 0) {
-
-                    Graph new_graph;
-                    
-                    new_graph.n = graph.n;
-                    new_graph.offset_i = graph.offset_i;
-                    new_graph.offset_j = graph.offset_j+1;
-                    new_graph.edge_count = graph.edge_count+1;
-
-                    new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
-
-                    // budu cist n radek
-                    for (int i = 0; i < graph.n; i++) {
-                        new_graph.graph[i] = (int*) malloc(graph.n*sizeof(int));
-                        // na kazdy bude n cisel
-                        for (int v = 0; v < graph.n; v++) {
-                            // postupne nacte radek do matice grafu, strtol si posouva pointer samo!
-                            new_graph.graph[i][v] = graph.graph[i][v];
-                        }
-                    }
-
-                    new_graph.graph[i][j] = 1;
-                    new_graph.graph[j][i] = 1;
-                    //printf("i:%d j:%d\n", i, j);
-                    // rekurze
-                    hc(new_graph);
-
-//                    graph[i][j] = 0;
-//                  graph[j][i] = 0;
-                }
-            }
-            graph.offset_j = i+2;
-        }
-    }
-    else {
-        
-    }
-    for(int i = 0; i < graph.n; i++) {
-            free(graph.graph[i]);
-        }
-        free(graph.graph);
-
-}
-
-
-void print_solution(struct Solution solution) {
-    printf("%d\n", solution.edges);
-    for (int i = 0; i < solution.n; i++) {
-        for (int v = 0; v < solution.n; v++) {
-            printf("%d", solution.graph[i][v]);
-        }
-        printf("\n");
     }
 }
 
-
-
+// test jestli graf je hamiltonovsky
 bool hamilton_test(Graph graph) {
     // cesta
     int path[graph.n];
@@ -330,6 +225,7 @@ bool hamilton_test(Graph graph) {
 
 }
 
+// rekurzivne volana funkce
 bool hamilton(Graph graph, int path[], int position, int used[])
 {
     
@@ -361,7 +257,6 @@ bool hamilton(Graph graph, int path[], int position, int used[])
         }
     }
     
-    
     return false; 
 }
 
@@ -375,7 +270,19 @@ void print_graph(Graph graph) {
         printf("\n");
     }
 }
-/* stara verze
+
+
+void print_solution(struct Solution solution) {
+    printf("%d\n", solution.edges);
+    for (int i = 0; i < solution.n; i++) {
+        for (int v = 0; v < solution.n; v++) {
+            printf("%d", solution.graph[i][v]);
+        }
+        printf("\n");
+    }
+}
+
+// hamiltonovska kruznice
 void print_hamilton_cycle(int n, int path[n]) {
     for (int i = 0; i < n; i++) {
             printf("%d ", path[i]);
@@ -383,4 +290,4 @@ void print_hamilton_cycle(int n, int path[n]) {
 
     printf("%d \n", path[0]);
 }
-*/
+
