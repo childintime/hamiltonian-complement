@@ -13,8 +13,8 @@ bool hamilton(int n, int graph[][n], int path[n], int position, int used[n]);
 /* vypise kruznici */
 void print_hamilton_cycle(int n, int path[n]);
 
-// hamiltonovsky doplnek je v hc[][n]
-void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j, int edge_count);
+// hlavni funkce, ktera naplni strukturu solution vyslednym grafem
+void hc(int n, int graph[][n], int offset_i, int offset_j, int edge_count);
 
 void print_graph(int n, int graph[][n]);
 
@@ -35,15 +35,15 @@ void print_solution(struct Solution);
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2) {
-		printf("usage: %s file_with_graph\n", argv[0]);
-		return 1;
-	}
-	
+    if (argc < 2) {
+        printf("usage: %s file_with_graph\n", argv[0]);
+        return 1;
+    }
+    
     FILE *graphFile;
     graphFile = fopen(argv[1], "r");
 
-	if (graphFile == NULL)
+    if (graphFile == NULL)
     {
         printf("Error reading file!\n");
         return 1;
@@ -63,20 +63,20 @@ int main(int argc, char *argv[])
 
     // budu cist n radek
     for (int i = 0; i < n; i++) {
-    	
-    	fgets(buffer, sizeof(buffer), graphFile);
-//		char *p = buffer;
+        
+        fgets(buffer, sizeof(buffer), graphFile);
+//      char *p = buffer;
 
-		// na kazdy bude n cisel
-    	for (int v = 0; v < n; v++)
-    	{
-    		// postupne nacte radek do matice grafu, strtol si posouva pointer samo!
+        // na kazdy bude n cisel
+        for (int v = 0; v < n; v++)
+        {
+            // postupne nacte radek do matice grafu, strtol si posouva pointer samo!
 
             graph[i][v] = buffer[v] - '0';
 
 
-    	}
-	}
+        }
+    }
     // struktura pro reseni
     //best_solution = n;
     //struct Solution solution;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     }
 
 
-	// ------------- mame matici a jdem overit jestli je hamiltonovska
+    // ------------- mame matici a jdem overit jestli je hamiltonovska
 
     
     if(hamilton_test(n, graph)) {
@@ -97,22 +97,7 @@ int main(int argc, char *argv[])
     else {
         //printf("Graf neni hamiltonovsky.\n");
         
-
-
-       
-        //print_graph(n, solution.complement);
-
-        // tohle pole bude to kam budu davat pridavat hrany, na zacatku tedy prazdny
-        int complement[n][n];
-        
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                complement[i][j] = 0;
-            }
-        }
-
-        
-        hc(n, graph, complement, 0, 1, 0);
+        hc(n, graph, 0, 1, 0);
         print_solution(solution);
         
 
@@ -122,45 +107,36 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void hc(int n, int graph[][n], int complement[][n], int offset_i, int offset_j, int edge_count) {
-    
+void hc(int n, int graph[][n], int offset_i, int offset_j, int edge_count) {
 
+    if(hamilton_test(n, graph)) {
+
+        if (edge_count < solution.edges) {
+            solution.edges = edge_count;
+            for (int n1 = 0; n1 < n; n1++) {
+                for (int n2 = 0; n2 < n; n2++) {
+                    solution.graph[n1][n2] = graph[n1][n2];
+                }
+            }
+                            //printf("mam NEJLEPSI reseni, pocet hran:%d \n", edge_count+1);
+        }
+        else {
+                            //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", edge_count+1);    
+        }
+    }
     
     for (int i = offset_i; i < n; i++) {
         for (int j = offset_j; j < n; j++) {
             //printf("i:%d j:%d\n", i, j);
-                if (graph[i][j] == 0 && complement[i][j] == 0 ) {
+                if (graph[i][j] == 0) {
                     graph[i][j] = 1;
                     graph[j][i] = 1;
-                    complement[i][j] = 1;
-                    complement[j][i] = 1;
-
-                    if(hamilton_test(n, graph)) {
-                        
-                        if (edge_count+1 < solution.edges) {
-                            solution.edges = edge_count+1;
-                            for (int n1 = 0; n1 < n; n1++) {
-                                for (int n2 = 0; n2 < n; n2++) {
-                                    // solution.graph[n1][n2] = complement[n1][n2];
-                                    solution.graph[n1][n2] = graph[n1][n2];
-                                }
-                            }
-                            //printf("mam NEJLEPSI reseni, pocet hran:%d \n", edge_count+1);
-                        }
-                        else {
-                            //printf("mam reseni, ale neni nejlepsi, pocet hran:%d \n", edge_count+1);    
-                        }
-                        //print_graph(n, complement);
-                    }
-
-                    hc(n, graph, complement, i, j+1, edge_count+1);
+                    
+                    hc(n, graph, i, j+1, edge_count+1);
 
                     graph[i][j] = 0;
                     graph[j][i] = 0;
-                    complement[i][j] = 0;
-                    complement[j][i] = 0;
                 }
-            
         }
         offset_j = i+2;
     }
