@@ -49,6 +49,7 @@ struct Solution solution;
 
 void print_solution(struct Solution);
 
+// zasobnik na grafy, misto rekurze
 std::stack<Graph> graph_stack;
 
 int main(int argc, char *argv[])
@@ -141,6 +142,12 @@ void hc_stack() {
                     for (int n2 = 0; n2 < graph.n; n2++) {
                         solution.graph[n1][n2] = graph.graph[n1][n2];
                     }
+                }
+
+                if (solution.edges == 1) {
+                    //printf("dolni mez, koncim hledani\n");
+                    return;
+
                 }
                 //printf("mam NEJLEPSI reseni, pocet hran:%d \n", solution.edges);
             }
