@@ -28,7 +28,7 @@ bool hamilton(Graph graph, int path[], int position, int used[]);
 
 
 /* vypise kruznici */
-void print_hamilton_cycle(int n, int path[n]);
+//void print_hamilton_cycle(int n, int path[n]);
 
 // hlavni funkce, ktera naplni strukturu solution vyslednym grafem
 void hc_stack();
@@ -290,7 +290,7 @@ void print_solution(struct Solution solution) {
 }
 
 // hamiltonovska kruznice
-
+/*
 void print_hamilton_cycle(int n, int path[n]) {
     for (int i = 0; i < n; i++) {
             printf("%d ", path[i]);
@@ -298,4 +298,4 @@ void print_hamilton_cycle(int n, int path[n]) {
 
     printf("%d \n", path[0]);
 }
-
+*/
