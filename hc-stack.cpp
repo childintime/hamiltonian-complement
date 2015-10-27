@@ -175,10 +175,10 @@ void hc_stack() {
 
                             new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
 
-                            for (int i = 0; i < graph.n; i++) {
-                                new_graph.graph[i] = (int*) malloc(graph.n*sizeof(int));
+                            for (int i2 = 0; i2 < graph.n; i2++) {
+                                new_graph.graph[i2] = (int*) malloc(graph.n*sizeof(int));
                                 for (int v = 0; v < graph.n; v++) {
-                                    new_graph.graph[i][v] = graph.graph[i][v];
+                                    new_graph.graph[i2][v] = graph.graph[i2][v];
                                 }
                             }
 
