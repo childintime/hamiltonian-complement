@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
   if (my_rank != 0) {
     /* create message */
-    sprintf (message,"Greetings from process %d!",my_rank);
+    sprintf (message,"Ahoj - Greetings from process %d!",my_rank);
     dest=0;
     /* length of message is strlen(message)+1 to send '\0' */
     /* this is blocking send */
