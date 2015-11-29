@@ -169,6 +169,7 @@ int main(int argc, char *argv[])
                     Graph graph_to_send = graph_vector_stack.back();
                     graph_vector_stack.pop_back();
 
+
                     data[0] = graph_to_send.n;
                     data[1] = graph_to_send.offset_i;
                     data[2] = graph_to_send.offset_j;
@@ -179,17 +180,19 @@ int main(int argc, char *argv[])
                             data[4+g_i*n+g_j] = graph_to_send.graph[g_i][g_j];
                         }     
                     }
-
-                    printf("Posilam do i: %d.\n", i);
+                //    print_graph(graph_to_send);
+                    printf("Posilam graf do i: %d.\n", i);
                     MPI_Send(data, n*n+4, MPI_INT, i, tag, MPI_COMM_WORLD);
                 }
+                //print_graph(graph_vector_stack.back());
+        
 
             }
             else {
                 int data[n*n+4];
                 printf("Jsem slave, muj rank: %d.\n", my_rank);
                 MPI_Recv (&data, n*n+4, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                printf("Slave %d: dostal jsem zpravu.\n", my_rank);
+               // printf("Slave %d: dostal jsem zpravu.\n", my_rank);
                 Graph received_graph;
                 received_graph.n = data[0];
                 received_graph.offset_i = data[1];
@@ -207,16 +210,21 @@ int main(int argc, char *argv[])
             //printf("startovaci graf procesu %d, offset: %d,%d\n", my_rank, received_graph.offset_i, received_graph.offset_j);
             //print_graph(received_graph);
 
+                // smazu ten vychozi graf
                 graph_vector_stack.pop_back();
+                // dam tam ten co mi prisel
                 graph_vector_stack.push_back(received_graph);
             }
 
         }
+
         
+        //            printf("Posilam do i: %d.\n", i);
+                    
         
         hc_stack();
-        printf("proces %d je hotov, pocet pridanych hran: %d\n", my_rank, solution.edges);
-        //print_solution(solution);
+        printf("proces %d je hotov, pocet pridanych hran: %d, vysledny graf:\n", my_rank, solution.edges);
+        print_solution(solution);
         double t2 = MPI_Wtime(); /* koncovy cas */
         printf("Spotrebovany cas procesu %d je %fs, pocet hamilton testu: %d\n", my_rank, t2 - t1, hamilton_test_count);
         
@@ -241,6 +249,9 @@ void hc_stack() {
         //printf("vector size%d\n", graph_vector_stack.size());
         Graph graph = graph_vector_stack.back();
 
+        if(my_rank == 1) {
+        //print_graph(graph);
+        }
         // smazani vrcholu
         graph_vector_stack.pop_back();
        
@@ -280,8 +291,8 @@ void hc_stack() {
                             Graph new_graph;
 
                             new_graph.n = graph.n;
-                            new_graph.offset_i = graph.offset_i;
-                            new_graph.offset_j = graph.offset_j+1;
+                            new_graph.offset_i = i;
+                            new_graph.offset_j = j;
                             new_graph.edge_count = graph.edge_count+1;
 
                             new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
@@ -364,8 +375,8 @@ void parallel_stack_init() {
                     Graph new_graph;
 
                     new_graph.n = graph.n;
-                    new_graph.offset_i = graph.offset_i;
-                    new_graph.offset_j = graph.offset_j+1;
+                    new_graph.offset_i = i;
+                    new_graph.offset_j = j;
                     new_graph.edge_count = graph.edge_count+1;
 
                     new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
@@ -383,6 +394,10 @@ void parallel_stack_init() {
                     
                             // dam na zasobnik ten novy graf
                     graph_vector_stack.push_back(new_graph);
+                    //printf("pushback\n");
+                    //print_graph(new_graph);
+
+
                     iter = 1;
                     
                     if(graph_vector_stack.size() == (number_of_processes-1)) {
