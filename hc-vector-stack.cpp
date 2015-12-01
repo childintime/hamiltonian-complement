@@ -20,7 +20,6 @@ typedef struct Graph {
 } Graph;
 
 
-
 /* test zda je zadany graf hamiltonovsky*/
 bool hamilton_test(Graph graph);
 
@@ -137,7 +136,6 @@ void hc_stack() {
 
         // smazani vrcholu
         graph_vector_stack.pop_back();
-       
         // test jestli uz graf je hamiltonovsky, pokud ano a pouzilo se mene hran nez ma dosavadni nejlepsi reseni tak prepsat reseni.
         if(hamilton_test(graph)) {
             if (graph.edge_count < solution.edges) {
@@ -173,8 +171,8 @@ void hc_stack() {
                             Graph new_graph;
 
                             new_graph.n = graph.n;
-                            new_graph.offset_i = graph.offset_i;
-                            new_graph.offset_j = graph.offset_j+1;
+                            new_graph.offset_i = i;
+                            new_graph.offset_j = j;
                             new_graph.edge_count = graph.edge_count+1;
 
                             new_graph.graph = (int**) malloc(graph.n*sizeof(int*));
