@@ -497,14 +497,29 @@ void hc_stack() {
                     		stop_work = 1;
                     		break;
                     	case MSG_WORK_REQUEST:
-                    	printf("poslal nam zadost o data!");
+                    	printf("poslal nam zadost o data! Mam jich: %d", graph_vector_stack.size());
                     	MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                         // tak mu neco poslem
                     	int a = 5;
                     	int process = 1;
 
+
                     	if (graph_vector_stack.size() > 2) {
-                    		int number_of_graphs = 2;
+                            Graph bottom = graph_vector_stack[0];
+                            int bottom_edges = bottom.edge_count;
+                            int test = bottom_edges;
+                            int bottom_i = 0;
+                            
+                            while(test = bottom_edges && bottom_i < graph_vector_stack.size()) {
+                                Graph t2 = graph_vector_stack[bottom_i];
+                                test = t2.edge_count;
+                                bottom_i++;
+                            }
+                            
+                            printf("mam tu %d grafu na vrstve dna s %d hranama. takze mu jich zkusim poslat: %d", bottom_i, bottom_edges, bottom_i/2);
+
+
+                    		int number_of_graphs = bottom_i/2;
                     		int offset = n*n+4;
                     		int data[number_of_graphs*offset];
 
@@ -530,7 +545,7 @@ void hc_stack() {
                     		}
                             // posilam data
                     		MPI_Send(data, number_of_graphs*offset, MPI_INT, status.MPI_SOURCE, MSG_WORK_DATA, MPI_COMM_WORLD);     
-                            printf("tak jsem mu je poslal!\n");
+                            printf("tak jsem mu je poslal! ted jich mam: %d\n", graph_vector_stack.size());
 
                             // poslal jsem data, tak jeste musim vyresit pesky (bod 2. z navodu na eduxu)
                     		if(my_rank > status.MPI_SOURCE) {
