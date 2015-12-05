@@ -265,49 +265,28 @@ int main(int argc, char *argv[])
         int rank_to_request = my_rank;
             
         while(!stop_work && solution.edges > 1) {
-            /*
-            if (cycles == WORK_REQUEST_PROBE_TRESHOLD) {
-                MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-                //printf("%d\n", flag);
-                if(flag) {
-                    printf("nekdo na poslal zasssspravu");
-                    switch (status.MPI_TAG) {
-                        case MSG_SOLUTION:
-                        printf("poslal reseni");
-                        MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                        break;
-                        case MSG_WORK_REQUEST:
-                        printf("poslal data");
-                        MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                        break;
-                    }
-                }
-            }
-            else {
-                cycles++;
-            }
-            */
             
-            int deny = 0;
             // dosla prace?
             if (graph_vector_stack.size() == 0) {
                 // prace dosla -> process je idle
                 // kdyz jsem 0 a jsem white tak poslu peska dal - edux navod 1. bod
-                if(my_rank == 0) {
-                	process_color = WHITE;
-                	token_color = WHITE;
-                	// poslu peska dalsimu procesu
-                	MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);
-                	// uz nemam peska
-                	token = 0;
-                }
-                // edux navod bod 3. druha cast
+                printf("Proces %d: process_color: %d, token: %d, token_color: %d \n", my_rank, process_color, token, token_color);
                 if(token) {
-                	process_color == WHITE;
-                	// poslu peska dal
-                	MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);
-                    token = 0;
-
+                    if(my_rank == 0) {
+                        token_color = WHITE;
+                        MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);    
+                    }
+                    else {
+                        if (process_color == BLACK) {
+                            token_color = BLACK;
+                            MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);           
+                        }
+                        else {
+                            MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);              
+                        }
+                    }
+                    printf("Proces %d: idle a posila peska barvy %d procesu %d \n", my_rank, token_color, (my_rank + 1) % number_of_processes);
+                    token=0;
                 }
                 process_color = WHITE;
 
@@ -317,7 +296,7 @@ int main(int argc, char *argv[])
                         rank_to_request = (rank_to_request + 1) % number_of_processes;    
                     }
 
-                    printf("jsem proces %d a chci poslat zadost o praci procesu %d \n", my_rank, rank_to_request);
+                    printf("Proces %d: posilam WORK_REQUEST procesu %d \n", my_rank, rank_to_request);
                     int a = 5;
                     MPI_Send(&a, 1, MPI_INT, rank_to_request, MSG_WORK_REQUEST, MPI_COMM_WORLD);
                 
@@ -328,35 +307,39 @@ int main(int argc, char *argv[])
                 
                 }
                 else {
-                    printf("Proces %d cekam na zpravu ", my_rank);
+                    printf("Proces %d: ", my_rank);
                     //MPI_Status s2;
 
                     
                     MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                    printf("probe prosel");
+                    //printf("probe prosel, ");
                     MPI_Get_count(&status, MPI_INT, &message_size);
                     
-                    printf(" zprava je od %d, tag: %d, ", status.MPI_SOURCE, status.MPI_TAG);
+                    printf(" zprava od %d, tag: %d, ", status.MPI_SOURCE, status.MPI_TAG);
 
                     switch (status.MPI_TAG) {
                     	// edux 3. bod prvni cast
-                    	case MSG_TOKEN:
+                    	
+                        case MSG_TOKEN:
                     		MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
                     		token = 1;
+                            token_color = msgtest;
                     		if(my_rank == 0) {
-                    			if(msgtest == WHITE) {
+                    			if(token_color == WHITE) {
                     				printf("muzu koncit vypocet!!!!!\n");
                     				for(int process_i = 1; process_i < number_of_processes; process_i++) {
                     					MPI_Send(&msgtest, 1, MPI_INT, process_i, MSG_STOP, MPI_COMM_WORLD);	
                     				}
                     				stop_work = 1;
                     			}
-                    			else {
-                    				
+                                // token je black
+                    			
+                                else if (token_color == BLACK){
                     				token_color = WHITE;
                 					// poslu peska dalsimu procesu
-                					MPI_Send(&token_color, 1, MPI_INT, (my_rank + 1) % number_of_processes, MSG_TOKEN, MPI_COMM_WORLD);
+                                    printf("Proces %d: posilam peska barvy %d procesu %d \n", my_rank, token_color, 1);
+                					MPI_Send(&token_color, 1, MPI_INT, 1, MSG_TOKEN, MPI_COMM_WORLD);
                                     token = 0;
 
                     			}
@@ -365,10 +348,12 @@ int main(int argc, char *argv[])
                     		if(process_color == BLACK) {
                     			token_color == BLACK;
                     		}
+
                     		break;
+                        
                     	case MSG_STOP:
                     		MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                    		printf("prislo, ze muzu skoncit!!!\n");
+                    		printf("prislo, ze muzu skoncit!!!, mam v zasobniku: %d\n", graph_vector_stack.size());
                     		stop_work = 1;
                     		break;
 						case MSG_SOLUTION:
@@ -385,12 +370,10 @@ int main(int argc, char *argv[])
                         case MSG_WORK_REQUEST_DENY:
                             printf("misto dat prislo odmitnuti");
                             MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                            deny = 1;
                             request_sent = 0;
                             break;
                         case MSG_WORK_DATA:
                             request_sent = 0;
-                            deny = 0;
                             printf("prisly data, pocet grafu: %d", message_size/(n*n+4));
                             //int data[(message_size)/]
                             int number_of_graphs = message_size/(n*n+4);
@@ -427,18 +410,9 @@ int main(int argc, char *argv[])
                             
 
                     }
-                    printf("velikost zasobniku: %d, deny: %d\n", graph_vector_stack.size(), deny);
-                    
-                    //break;
-                    
-
-                    //if (deny == 1) {
-                      //  break;
-                    //}
-                    
-                    //break;
+                    printf("Proces %d: velikost zasobniku: %d\n", my_rank, graph_vector_stack.size());
                 }
-                //break;
+                
             }
             else {
                 printf("proces %d jde pocitat \n", my_rank);
@@ -448,20 +422,41 @@ int main(int argc, char *argv[])
         }        
         printf("proces %d vyskocil z while \n", my_rank);
         MPI_Barrier(MPI_COMM_WORLD);
+        
+        int final_solution[n*n+1];
+        if (my_rank == 0) {
+            printf("moje reseni reseni ma pocet hran: %d\n", solution.edges);
+            for(int process_i = 1; process_i < number_of_processes; process_i++) {
+                MPI_Recv (&final_solution, n*n+1, MPI_INT, MPI_ANY_SOURCE, MSG_SOLUTION, MPI_COMM_WORLD, &status);
+                printf("prislo reseni od %d, pocet hran: %d\n", status.MPI_SOURCE, final_solution[0]);
+                if(final_solution[0] < solution.edges) {
+                    solution.edges = final_solution[0];
+                    for (int solution_i = 0; solution_i < n; solution_i++) {
+                        for (int solution_j = 0; solution_j < n; solution_j++) {
+                        solution.graph[solution_i][solution_j] = final_solution[solution_i*n+solution_j+1];
+                        }     
+                    }
+                }
+            }
+            print_solution(solution);
+        }
+        else {
+            final_solution[0] = solution.edges;
+            for (int solution_i = 0; solution_i < n; solution_i++) {
+                for (int solution_j = 0; solution_j < n; solution_j++) {
+                    final_solution[solution_i*n+solution_j+1] = solution.graph[solution_i][solution_j];
+                }     
+            }
+            MPI_Send(&final_solution, n*n+1, MPI_INT, 0, MSG_SOLUTION, MPI_COMM_WORLD);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
         double t2 = MPI_Wtime(); /* koncovy cas */
-
-        //printf("proces %d je hotov, pocet pridanych hran: %d, vysledny graf:\n", my_rank, solution.edges);
-        //print_solution(solution);
         
         printf("Spotrebovany cas procesu %d je %fs, pocet hamilton testu: %d\n", my_rank, t2 - t1, hamilton_test_count);
         
 
         /* shut down MPI */
         MPI_Finalize();
-
-        return 0;
-
-        print_solution(solution);
     }
     
     return 0;
@@ -477,18 +472,19 @@ void hc_stack() {
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
                 //printf("%d\n", flag);
                 if(flag) {
-                    printf("Proces %d dostal zpravu od procesu %d  - ", my_rank, status.MPI_SOURCE);
+                    printf("Proces %d: zprava od %d: ", my_rank, status.MPI_SOURCE);
                     switch (status.MPI_TAG) {
                     	case MSG_TOKEN:
-                    		printf("prisel nam pesek");
+                    		printf("pesek ");
                     		MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                    		printf("- jeho barva je %d \n", msgtest);
-							token = 1;
-                    		token_color = msgtest;
-                    		// edux navod 3. bod
-                    		if(process_color == BLACK) {
-                    			token_color == BLACK;
-                    		}
+                    		printf("- jeho barva je %d, mam %d v zasobniku \n", msgtest, graph_vector_stack.size());
+							
+                            // nejsme IDLE, peska nebudu posilat dal
+                            token = 1;
+                            token_color = msgtest;
+                            if(process_color == BLACK) {
+                                token_color == BLACK;
+                            }
 
                     		break;
 						case MSG_STOP:
@@ -497,7 +493,7 @@ void hc_stack() {
                     		stop_work = 1;
                     		break;
                     	case MSG_WORK_REQUEST:
-                    	printf("poslal nam zadost o data! Mam jich: %d", graph_vector_stack.size());
+                    	printf(" zadost o data! Mam jich: %d", graph_vector_stack.size());
                     	MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                         // tak mu neco poslem
                     	int a = 5;
@@ -516,7 +512,7 @@ void hc_stack() {
                                 bottom_i++;
                             }
                             
-                            printf("mam tu %d grafu na vrstve dna s %d hranama. takze mu jich zkusim poslat: %d", bottom_i, bottom_edges, bottom_i/2);
+                            printf("posilam grafu: %d", bottom_i/2);
 
 
                     		int number_of_graphs = bottom_i/2;
@@ -550,7 +546,8 @@ void hc_stack() {
                             // poslal jsem data, tak jeste musim vyresit pesky (bod 2. z navodu na eduxu)
                     		if(my_rank > status.MPI_SOURCE) {
                     			process_color = BLACK;
-                    		}
+                                printf("Proces %d: menim svoji barvu na BLACK!\n", my_rank);
+                            }
                     	} 
                     	else {
                     		printf("uz toho mam malo, poslu mu odmitnuti!\n");
@@ -574,10 +571,6 @@ void hc_stack() {
 
         //printf("vector size%d\n", graph_vector_stack.size());
         Graph graph = graph_vector_stack.back();
-
-        if(my_rank == 1) {
-        //print_graph(graph);
-        }
         // smazani vrcholu
         graph_vector_stack.pop_back();
        
@@ -813,6 +806,9 @@ void print_graph(Graph graph) {
 
 
 void print_solution(struct Solution solution) {
+    printf("----- reseni ----- \n");
+    printf("pocet hran:%d\n", solution.edges);
+    printf("graf: \n");
     for (int i = 0; i < solution.n; i++) {
         for (int v = 0; v < solution.n; v++) {
             printf("%d", solution.graph[i][v]);
