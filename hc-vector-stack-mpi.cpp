@@ -24,8 +24,6 @@
 #define PRINT_STATE 1
 #define PRINT_INIT_GRAPHS 0
 
-// chyba: nekde se asi ztrati token :(
-
 // struktura grafu, vcetne pozice a poctu pridanych hran ... vlastne stav
 typedef struct Graph {
     // pocet vrcholu
@@ -312,21 +310,6 @@ int main(int argc, char *argv[])
                     // i kdyz nemam peska tak se stavam bilym
                     process_color = WHITE;
 
-                        MPI_Iprobe(MPI_ANY_SOURCE, MSG_STOP, MPI_COMM_WORLD, &flag, &status);
-                        if(flag) {
-                            MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MSG_STOP, MPI_COMM_WORLD, &status);
-
-                                
-                                
-                                #if PRINT_MPI
-                                printf("prislo, ze muzu skoncit! mam v zasobniku: %d\n", graph_vector_stack.size());
-                                #endif
-                                
-                                stop_work = 1;
-                                break;
-                        }
-
-printf("ve fronte neni konec\n");
                     // pokud jsem uz neposilal zadost
                     if (request_sent == 0) {
                         rank_to_request = (rank_to_request + 1) % number_of_processes;
@@ -345,8 +328,6 @@ printf("ve fronte neni konec\n");
                     }
                     // zadost jsem poslal, tak pockam na zpravu, bud to budou data, nebo pesek, nebo neco jinyho...
                     else {
-                        
-
                         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                         MPI_Get_count(&status, MPI_INT, &message_size);
                         
