@@ -20,8 +20,8 @@
 #define PROBE_TRESHOLD 100
 //#define WORK_REQUEST_PROBE_TRESHOLD 100
 
-#define PRINT_MPI 1
-#define PRINT_STATE 1
+#define PRINT_MPI 0
+#define PRINT_STATE 0
 #define PRINT_INIT_GRAPHS 0
 
 // struktura grafu, vcetne pozice a poctu pridanych hran ... vlastne stav
@@ -328,6 +328,46 @@ int main(int argc, char *argv[])
                     }
                     // zadost jsem poslal, tak pockam na zpravu, bud to budou data, nebo pesek, nebo neco jinyho...
                     else {
+                        MPI_Iprobe(MPI_ANY_SOURCE, MSG_TOKEN, MPI_COMM_WORLD, &flag, &status);
+                        if(flag) {
+                            MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MSG_TOKEN, MPI_COMM_WORLD, &status);
+
+                                token = 1;
+                                token_color = message;
+
+                                if(my_rank == 0) {
+                                    // pokud prisel procesu 0 bily pesek, tak konec!
+                                    if(token_color == WHITE) {
+                                        
+                                        #if PRINT_MPI
+                                        printf("prisel bily pesek, takze konec celeho vypoctu!\n");
+                                        #endif                                        
+                                        
+                                        for(int process_i = 1; process_i < number_of_processes; process_i++) {
+                                            MPI_Send(&message, 1, MPI_INT, process_i, MSG_STOP, MPI_COMM_WORLD);    
+                                        }
+                                        stop_work = 1;
+                                    }
+                                    // poslu bily token dal, zadny konec
+                                    else {
+                                        token_color = WHITE;
+                                        
+                                        #if PRINT_MPI                                        
+                                        printf("Proces %d: posilam peska barvy %d procesu %d \n", my_rank, token_color, 1);
+                                        #endif                                        
+                                        
+                                        MPI_Send(&token_color, 1, MPI_INT, 1, MSG_TOKEN, MPI_COMM_WORLD);
+                                        token = 0;
+                                    }
+                                }
+
+                                // edux bod 3. prvni cast
+                                if(process_color == BLACK) {
+                                    token_color == BLACK;
+                                }
+                                break;
+                        }
+
                         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                         MPI_Get_count(&status, MPI_INT, &message_size);
                         
