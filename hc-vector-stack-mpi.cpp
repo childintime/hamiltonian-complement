@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
                         switch (status.MPI_TAG) {
                             // prisel token
                     	    case MSG_TOKEN:
-                                MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_TOKEN, MPI_COMM_WORLD, &status);
 
                                 token = 1;
                                 token_color = message;
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
 
                             case MSG_STOP:
 
-                                MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_STOP, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
                                 printf("prislo, ze muzu skoncit! mam v zasobniku: %d\n", graph_vector_stack.size());
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
                                 break;
                  
                             case MSG_SOLUTION:
-                                MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_SOLUTION, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI                                
                                 printf("prislo reseni \n");
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
                                 break;
                  
                             case MSG_WORK_REQUEST:
-                                MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI                                
                                 printf("prisla zadost o praci, sam nemam, odmitam \n");
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
                                 break;
 
                             case MSG_WORK_REQUEST_DENY:
-                                MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST_DENY, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
                                 printf("prislo odmitnuti zadosti o praci \n");
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
                                 int number_of_graphs = message_size/(n*n+4);
                                 int new_work[message_size];
                                 int offset = n*n+4;
-                                MPI_Recv (&new_work, message_size, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                                MPI_Recv (&new_work, message_size, MPI_INT, status.MPI_SOURCE, MSG_WORK_DATA, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
                                 printf("prisly data, pocet grafu: %d\n", number_of_graphs);
@@ -563,7 +563,7 @@ void hc_stack() {
 
                 switch (status.MPI_TAG) {
                    	case MSG_TOKEN:
-                   		MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                   		MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_TOKEN, MPI_COMM_WORLD, &status);
 
                         #if PRINT_MPI
                    		printf("prisel pesek barvy %d, mam %d v zasobniku \n", msgtest, graph_vector_stack.size());
@@ -579,7 +579,7 @@ void hc_stack() {
                         break;
 
 					case MSG_STOP:
-                    	MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    	MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_STOP, MPI_COMM_WORLD, &status);
 
                         #if PRINT_MPI
                         printf("prislo ukonceni vypoctu, stop_work=1!");
@@ -589,7 +589,7 @@ void hc_stack() {
                         break;
 
                     case MSG_WORK_REQUEST:
-                        MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                        MPI_Recv (&message, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
                             
                         Graph bottom = graph_vector_stack[0];
                         int bottom_edges = bottom.edge_count;
