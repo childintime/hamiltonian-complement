@@ -24,6 +24,8 @@
 #define PRINT_STATE 1
 #define PRINT_INIT_GRAPHS 0
 
+// chyba: nekde se asi ztrati token :(
+
 // struktura grafu, vcetne pozice a poctu pridanych hran ... vlastne stav
 typedef struct Graph {
     // pocet vrcholu
