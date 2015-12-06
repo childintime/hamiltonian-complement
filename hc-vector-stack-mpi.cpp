@@ -20,8 +20,8 @@
 #define PROBE_TRESHOLD 100
 //#define WORK_REQUEST_PROBE_TRESHOLD 100
 
-#define PRINT_MPI 0
-#define PRINT_STATE 0
+#define PRINT_MPI 1
+#define PRINT_STATE 1
 #define PRINT_INIT_GRAPHS 0
 
 // struktura grafu, vcetne pozice a poctu pridanych hran ... vlastne stav
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
                                 MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
-                                printf("prislo, ze muzu skoncit!!!, mam v zasobniku: %d\n", graph_vector_stack.size());
+                                printf("prislo, ze muzu skoncit! mam v zasobniku: %d\n", graph_vector_stack.size());
                                 #endif
                                 
                                 stop_work = 1;
@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
                                 MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI                                
-                                printf("misto dat prislo reseni");
+                                printf("prislo reseni \n");
                                 #endif
                                 
                                 break;
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
                                 MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI                                
-                                printf("misto dat prisla zadost o prace, nemam odmitam");
+                                printf("prisla zadost o praci, sam nemam, odmitam \n");
                                 #endif
                                 
                                 MPI_Send(&message, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST_DENY, MPI_COMM_WORLD);
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
                                 MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
-                                printf("misto dat prislo odmitnuti");
+                                printf("prislo odmitnuti zadosti o praci \n");
                                 #endif
                                 
                                 request_sent = 0;
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
                                 MPI_Recv (&new_work, message_size, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
                                 
                                 #if PRINT_MPI
-                                printf("prisly data, pocet grafu: %d", number_of_graphs);
+                                printf("prisly data, pocet grafu: %d\n", number_of_graphs);
                                 #endif
                                 
                                 for (int graph_i = 0; graph_i < number_of_graphs; graph_i++) {
@@ -467,6 +467,7 @@ int main(int argc, char *argv[])
             printf("Proces %d: jsem pryc z vypoctu \n", my_rank);
             #endif
 
+            // pockam az vyskoci vsichni
             MPI_Barrier(MPI_COMM_WORLD);
 
             int local_solution[2];
@@ -509,7 +510,7 @@ int main(int argc, char *argv[])
 
                 int final_solution[n*n+1];
                 #if PRINT_STATE
-                printf("Proces %d: mam nejlepsi reseni.", global_solution[1]);
+                printf("Proces %d: mam nejlepsi reseni.\n", global_solution[1]);
                 #endif
 
                 final_solution[0] = solution.edges;
@@ -525,7 +526,7 @@ int main(int argc, char *argv[])
 
         else {
             #if PRINT_STATE
-            printf("Pocita jen jeden proces");
+            printf("Pocita jen jeden proces. \n");
             #endif
 
             hc_stack();
@@ -547,119 +548,143 @@ int main(int argc, char *argv[])
 void hc_stack() {
     int cycles = 0;
     int msgtest = 0;
+    int message = 0;
     // dokud je neco v zasobniku tak hledani bezi
     while(graph_vector_stack.size() > 0) {
+        // prichozi zpravy pri vypoctu nekontruluju porad, jednou za cas podle trehsholdu
         if(cycles == PROBE_TRESHOLD) {
+
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-                //printf("%d\n", flag);
-                if(flag) {
-                    printf("Proces %d: zprava od %d: ", my_rank, status.MPI_SOURCE);
-                    switch (status.MPI_TAG) {
-                    	case MSG_TOKEN:
-                    		printf("pesek ");
-                    		MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                    		printf("- jeho barva je %d, mam %d v zasobniku \n", msgtest, graph_vector_stack.size());
+                
+            if(flag) {
+                #if PRINT_MPI
+                printf("Proces %d: zprava od %d: ", my_rank, status.MPI_SOURCE);
+                #endif
+
+                switch (status.MPI_TAG) {
+                   	case MSG_TOKEN:
+                   		MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+                        #if PRINT_MPI
+                   		printf("prisel pesek barvy %d, mam %d v zasobniku \n", msgtest, graph_vector_stack.size());
+                        #endif
 							
-                            // nejsme IDLE, peska nebudu posilat dal
-                            token = 1;
-                            token_color = msgtest;
-                            if(process_color == BLACK) {
-                                token_color == BLACK;
+                        // nejsme IDLE, peska nebudu posilat dal
+                        token = 1;
+                        token_color = message;
+                        // edux navod bod 3. prvni cast
+                        if(process_color == BLACK) {
+                            token_color == BLACK;
+                        }
+                        break;
+
+					case MSG_STOP:
+                    	MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+                        #if PRINT_MPI
+                        printf("prislo ukonceni vypoctu, stop_work=1!");
+                        #endif
+
+                    	stop_work = 1;
+                        break;
+
+                    case MSG_WORK_REQUEST:
+                        MPI_Recv (&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                            
+                        Graph bottom = graph_vector_stack[0];
+                        int bottom_edges = bottom.edge_count;
+                        int test = bottom_edges;
+                        int bottom_i = 0;
+                            
+                        while(test == bottom_edges && bottom_i < graph_vector_stack.size()) {
+                            Graph t2 = graph_vector_stack[bottom_i];
+                            test = t2.edge_count;
+                            bottom_i++;
+                        }
+    
+                        #if PRINT_MPI
+                        printf("zadost o data! na vrstve dna mam %d grafu, ", bottom_i);
+                        #endif
+
+                        if(bottom_i > 1) {
+                            int number_of_graphs = bottom_i/2;
+                            int offset = n*n+4;
+                            int data[number_of_graphs*offset];
+
+                            for (int graph_i = 0; graph_i < number_of_graphs; graph_i++) {
+                                Graph graph_to_send = graph_vector_stack.front();
+                                graph_vector_stack.erase(graph_vector_stack.begin());
+
+                                data[graph_i*offset] = graph_to_send.n;
+                                data[1+graph_i*offset] = graph_to_send.offset_i;
+                                data[2+graph_i*offset] = graph_to_send.offset_j;
+                                data[3+graph_i*offset] = graph_to_send.edge_count;
+
+                                for (int g_i = 0; g_i < n; g_i++) {
+                                    for (int g_j = 0; g_j < n; g_j++) {
+                                    // prevedeni matice do jednorozmerneho pole
+                                    data[4+g_i*n+g_j+graph_i*offset] = graph_to_send.graph[g_i][g_j];
+                                    }
+                                }
                             }
 
-                    		break;
-						case MSG_STOP:
-                    		MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                            printf("prislo, ze mam skoncit, takze stopwork=1!");
-                    		stop_work = 1;
-                    		break;
-                    	case MSG_WORK_REQUEST:
-                    	printf(" zadost o data! Mam jich: %d", graph_vector_stack.size());
-                    	MPI_Recv (&msgtest, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                        // tak mu neco poslem
-                    	int a = 5;
-                    	int process = 1;
-
-
-                    	if (graph_vector_stack.size() > 2) {
-                            Graph bottom = graph_vector_stack[0];
-                            int bottom_edges = bottom.edge_count;
-                            int test = bottom_edges;
-                            int bottom_i = 0;
-                            
-                            while(test = bottom_edges && bottom_i < graph_vector_stack.size()) {
-                                Graph t2 = graph_vector_stack[bottom_i];
-                                test = t2.edge_count;
-                                bottom_i++;
-                            }
-                            
-                            printf("posilam grafu: %d", bottom_i/2);
-
-
-                    		int number_of_graphs = bottom_i/2;
-                    		int offset = n*n+4;
-                    		int data[number_of_graphs*offset];
-
-                    		for (int graph_i = 0; graph_i < number_of_graphs; graph_i++) {
-                    			Graph graph_to_send = graph_vector_stack.front();
-                    			graph_vector_stack.erase(graph_vector_stack.begin());
-
-                    			data[graph_i*offset] = graph_to_send.n;
-
-                    			data[1+graph_i*offset] = graph_to_send.offset_i;
-                    			data[2+graph_i*offset] = graph_to_send.offset_j;
-                    			data[3+graph_i*offset] = graph_to_send.edge_count;
-
-                    			for (int g_i = 0; g_i < n; g_i++) {
-                    				for (int g_j = 0; g_j < n; g_j++) {
-                            // prevedeni matice do jednorozmerneho pole
-                    					data[4+g_i*n+g_j+graph_i*offset] = graph_to_send.graph[g_i][g_j];
-                                //data[0][4+(g_i-1)*n+g_j] = 0;//graph_to_send.graph[g_i][g_j];
-                    				}
-
-                    			}
-                                //print_graph(graph_to_send);
-                    		}
                             // posilam data
-                    		MPI_Send(data, number_of_graphs*offset, MPI_INT, status.MPI_SOURCE, MSG_WORK_DATA, MPI_COMM_WORLD);     
-                            printf("tak jsem mu je poslal! ted jich mam: %d\n", graph_vector_stack.size());
+                            MPI_Send(data, number_of_graphs*offset, MPI_INT, status.MPI_SOURCE, MSG_WORK_DATA, MPI_COMM_WORLD);
+
+                            #if PRINT_MPI
+                            printf("posilam jich: %d\n", number_of_graphs);
+                            #endif     
 
                             // poslal jsem data, tak jeste musim vyresit pesky (bod 2. z navodu na eduxu)
-                    		if(my_rank > status.MPI_SOURCE) {
-                    			process_color = BLACK;
+                            if(my_rank > status.MPI_SOURCE) {
+                                process_color = BLACK;
+                                
+                                #if PRINT_STATE
                                 printf("Proces %d: menim svoji barvu na BLACK!\n", my_rank);
+                                #endif
                             }
-                    	} 
-                    	else {
-                    		printf("uz toho mam malo, poslu mu odmitnuti!\n");
-                    		MPI_Send(&msgtest, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST_DENY, MPI_COMM_WORLD);
-                    	}
-                        //tenhe break tu nebyl
-                    	break;
+                        }
+                        else {
+                            MPI_Send(&msgtest, 1, MPI_INT, status.MPI_SOURCE, MSG_WORK_REQUEST_DENY, MPI_COMM_WORLD);
+                            
+                            #if PRINT_STATE
+                            printf("to je malo, posilam odmitnuti!\n");
+                            #endif
+                        }
 
-                    }
+                        break;
                 }
-                cycles = 0;
+            }
+            cycles = 0;
         }
         else {
             cycles++;
         }
 
         if(stop_work == 1) {
+            #if PRINT_STATE
             printf("Proces %d: mam stopwork=1, takze break!\n", my_rank);
+            #endif
+
+            // vyskoceni z while cyklu
         	break;
         }
 
-        //printf("vector size%d\n", graph_vector_stack.size());
+        
+        // ----- hlavni vypocet
         Graph graph = graph_vector_stack.back();
         // smazani vrcholu
         graph_vector_stack.pop_back();
        
         hamilton_test_count++;
 
+
         if(hamilton_test_count % 10000 == 0) {
+            #if PRINT_STATE
         	printf("%d %d %d\n",my_rank, hamilton_test_count, solution.edges );
+            #endif
         }
+        
         // test jestli uz graf je hamiltonovsky, pokud ano a pouzilo se mene hran nez ma dosavadni nejlepsi reseni tak prepsat reseni.
         if(hamilton_test(graph)) {
             if (graph.edge_count < solution.edges) {
@@ -671,20 +696,31 @@ void hc_stack() {
                 }
 
                 if (solution.edges == 1) {
+                    #if PRINT_STATE
                     printf("Proces %d: mam dolni mez, koncim hledani ", my_rank);
+                    #endif
+
                     for(int process_i = 0; process_i < number_of_processes; process_i++) {
+                        // sobe posilat reseni nebudu, to zaroven osetri beh s jednim procesem
                         if(process_i != my_rank) {
+                            #if PRINT_STATE
                             printf(", posilam stop procesu %d\n", process_i);
+                            #endif
+
                             MPI_Send(&msgtest, 1, MPI_INT, process_i, MSG_STOP, MPI_COMM_WORLD);        
                         }
                     }
                     return;
 
                 }
-                printf("Proces %d: mam NEJLEPSI reseni, pocet hran:%d \n", my_rank, solution.edges);
+                #if PRINT_STATE
+                printf("Proces %d: mam reseni, pocet hran:%d \n", my_rank, solution.edges);
+                #endif
             }
             else {
-                printf("Proces %d: mam reseni, ale neni nejlepsi, pocet hran:%d \n", my_rank, graph.edge_count);    
+                #if PRINT_STATE
+                printf("Proces %d: mam reseni, ale neni nejlepsi, pocet hran:%d \n", my_rank, graph.edge_count);
+                #endif
             }
         }
         // ma cenu hledat dal jenom pokud neni hamiltonovsky
@@ -822,8 +858,7 @@ void parallel_stack_init() {
             }
             graph.offset_j = i+2;
         }
-        printf("tady");
-
+        
         for(int i = 0; i < graph.n; i++) {
             free(graph.graph[i]);
         }
@@ -839,14 +874,6 @@ bool hamilton(Graph graph, int path[], int position, int used[])
     if (position == graph.n) {
         
         if (graph.graph[path[0]][path[position-1]] == 1) {
-            //print_hamilton_cycle(n, path); 
-            /* 
-            for (int i = 0; i < n; i++) {
-                printf("%d ", path[i]);
-            }
-
-            printf("%d \n", path[0]);
-            */   
             return true;
         }
         else {
