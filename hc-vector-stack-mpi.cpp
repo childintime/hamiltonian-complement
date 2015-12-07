@@ -20,7 +20,7 @@
 #define PROBE_TRESHOLD 100
 //#define WORK_REQUEST_PROBE_TRESHOLD 100
 
-#define PRINT_MPI 1
+#define PRINT_MPI 0
 #define PRINT_STATE 1
 #define PRINT_INIT_GRAPHS 0
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
                     print_graph(graph_to_send);
                     #endif                    
 
-                    MPI_Send(data, n*n+4, MPI_INT, i, tag, MPI_COMM_WORLD);
+                    MPI_Send(data, n*n+4, MPI_INT, i, MSG_WORK_DATA, MPI_COMM_WORLD);
                 }
                 
                 #if PRINT_INIT_GRAPHS
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
                 printf("Proces %d: jsem slave.\n", my_rank);
                 #endif                
                 
-                MPI_Recv (&data, n*n+4, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                MPI_Recv (&data, n*n+4, MPI_INT, MPI_ANY_SOURCE, MSG_WORK_DATA, MPI_COMM_WORLD, &status);
                 
                 Graph received_graph;
                 received_graph.n = data[0];
@@ -848,7 +848,7 @@ void parallel_stack_init() {
                     
                     if(graph_vector_stack.size() == (number_of_processes-1)) {
                         graph.offset_i = i;
-                        graph.offset_j = graph.offset_j+1;
+                        graph.offset_j = graph.offset_j+2;
                         graph_vector_stack.push_back(graph);
                       
                         return;
